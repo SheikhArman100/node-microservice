@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.env
+Dockerfile
+.git
+.gitignore
+.eslintrc
+.eslintignore
+.prettierrc
+logs
+uploads
+prisma/migrations
