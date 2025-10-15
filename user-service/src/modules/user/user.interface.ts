@@ -1,15 +1,17 @@
-import { UserRole } from "../../constant";
+import { ENUM_ROLE } from "../../enum/rbac";
+
 
 
 export interface IUser {
-    id: number;
+    id?: number;
     name: string;
     email: string;
     phoneNumber: string;
-    password: string;
-    role: UserRole;
-    createdAt: Date;
-    updatedAt: Date;
+    password?: string;
+    role?: ENUM_ROLE;
+    isVerified?: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
   }
   
   export interface IUserFilters {
@@ -17,4 +19,3 @@ export interface IUser {
     role?: string;
     email?: string;
   }
-  

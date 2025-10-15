@@ -9,6 +9,7 @@ export default {
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
   rabbitmq_url: process.env.RABBITMQ_URL,
   mysql_uri: process.env.MYSQL_URI,
+  admin_client_url:process.env.ADMIN_CLIENT_URL,
   user_service_grpc: process.env.USER_SERVICE_GRPC,
   product_service_grpc: process.env.PRODUCT_SERVICE_GRPC,
   order_service_grpc: process.env.ORDER_SERVICE_GRPC,
@@ -22,6 +23,7 @@ export default {
     email_verify_secret: process.env.JWT_EMAIL_VERIFY_SECRET,
     email_verify_expires_in: process.env.JWT_EMAIL_VERIFY_EXPIRES_IN,
     gateway_secret: process.env.GATEWAY_SECRET,
+    bcrypt_salt_rounds:process.env.BCRYPT_SALT_ROUNDS
   },
   softograph_email: process.env.SOFTOGRAPH_EMAIL,
   softograph_pass: process.env.SOFTOGRAPH_PASS,

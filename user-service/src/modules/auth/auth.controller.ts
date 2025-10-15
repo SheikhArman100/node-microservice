@@ -8,9 +8,11 @@ import ApiError from '../../errors/ApiError';
 import { IUser } from '../user/user.interface';
 import config from '../../config';
 import { ENUM_COOKIE_NAME } from '../../enum/user';
+import { UserInfoFromToken } from '../../types/common';
 
 const signup = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthService.signup(req.body);
+  const result = await AuthService.signup( req.body,
+    req?.file);
 
   sendResponse(res, {
     statusCode: status.OK,
@@ -37,12 +39,27 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const signin = catchAsync(async (req: Request, res: Response) => {
-  if (!req.user) {
-    throw new ApiError(status.UNAUTHORIZED, 'Signin failed');
+const resendVerification = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    throw new ApiError(status.BAD_REQUEST, 'Email is required');
   }
+
+  const result = await AuthService.resendVerification(email);
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: 'Verification email sent successfully',
+    data: result,
+  });
+});
+
+const signin = catchAsync(async (req: Request, res: Response) => {
+  
   const { refreshToken, ...result } = await AuthService.signin(
-    req.user as IUser,
+    req.body as { email: string; password: string }
   );
   const cookieOptions = {
     secure: config.env === 'production',
@@ -67,6 +84,8 @@ const updateToken = catchAsync(async (req: Request, res: Response) => {
   if (!cookies) {
     throw new ApiError(status.UNAUTHORIZED, 'Please sign in first');
   }
+
+
 
   const { refreshToken, ...result } = await AuthService.updateToken(cookies);
   const cookieOptions = {
@@ -101,11 +120,9 @@ const signOut = catchAsync(async (req: Request, res: Response) => {
     throw new ApiError(status.UNAUTHORIZED, 'Please sign in first');
   }
 
-  const result = await AuthService.signOut(refreshToken);
+  await AuthService.signOut(refreshToken);
 
-  if (!result) {
-    throw new ApiError(status.UNAUTHORIZED, 'You are not authorized');
-  }
+  
   res.clearCookie(ENUM_COOKIE_NAME.REFRESH_TOKEN, {
     secure: config.env === 'production',
     httpOnly: true,
@@ -122,18 +139,20 @@ const checkUser = catchAsync(async (req: Request, res: Response) => {
   const cookies = req?.cookies?.[ENUM_COOKIE_NAME.REFRESH_TOKEN];
 
   if (!cookies) {
-    throw new ApiError(status.FORBIDDEN, 'Please sign in first');
+    throw new ApiError(status.UNAUTHORIZED, 'Please sign in first');
   }
 
   const result = await AuthService.checkUser(cookies);
 
+  // The service layer throws an ApiError if not authorized, so !result is effectively unreachable here.
+  // However, if for some reason it returns null/undefined, it's still an unauthorized state.
   if (!result) {
     res.clearCookie(ENUM_COOKIE_NAME.REFRESH_TOKEN, {
       secure: config.env === 'production',
       httpOnly: true,
     });
 
-    throw new ApiError(status.FORBIDDEN, 'You are not authorized');
+    throw new ApiError(status.UNAUTHORIZED, 'You are not authorized');
   }
 
   return sendResponse(res, {
@@ -147,6 +166,7 @@ const checkUser = catchAsync(async (req: Request, res: Response) => {
 export const AuthController = {
   signup,
   verifyEmail,
+  resendVerification,
   signin,
   updateToken,
   signOut,

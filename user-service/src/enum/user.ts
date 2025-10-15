@@ -1,17 +1,6 @@
-export enum ENUM_USER_ROLE {
-    ADMIN = 'admin',
-    USER="user"
-  }
-  
-  export const RoleWiseUserValue = {
-    
-    [ENUM_USER_ROLE.ADMIN]: 95,
-    [ENUM_USER_ROLE.USER]: 90,
-    
-  };
-  
+
   export enum ENUM_COOKIE_NAME {
-    REFRESH_TOKEN = 'AvatarJwt',
+    REFRESH_TOKEN = 'MicroserviceJwt',
   }
   
   export type DiskTypeEnum = 'LOCAL' | 'AWS' | 'SHARED';

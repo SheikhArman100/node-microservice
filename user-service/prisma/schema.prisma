@@ -7,15 +7,59 @@ datasource db {
   url      = env("MYSQL_URI")
 }
 
-enum UserRole {
-  user
-  admin
+enum FileType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  OTHER
 }
 
 enum DiskType {
   LOCAL
   AWS
   SHARED
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  level       Int
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[] @relation("UserRole") // Direct relation to users
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  resource    String
+  action      String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("rolePermissions")
 }
 
 model User {
@@ -25,13 +69,14 @@ model User {
   phoneNumber String
   password    String
   isVerified  Boolean  @default(false)
-  role        UserRole @default(user)
+  userRole    Role? @relation(fields: [roleId], references: [id], name: "UserRole") 
+  roleId      Int? // Foreign key to Role table
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   //relations
-  detail        UserDetail?
-  refreshTokens RefreshToken[]
+  detail       UserDetail?
+  refreshToken RefreshToken?
 
   //indexing
   @@index([email])
@@ -42,10 +87,10 @@ model User {
 
 model UserDetail {
   id      Int    @id @default(autoincrement())
-  image   Image?
-  address String
-  city    String
-  road    String
+  image    File?
+  address String?
+  city    String?
+  road    String?
   userId  Int    @unique
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -55,7 +100,7 @@ model UserDetail {
 model RefreshToken {
   id        Int      @id @default(autoincrement())
   token     String   @db.Text
-  userId    Int
+  userId    Int      @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   expiresAt DateTime
@@ -66,12 +111,13 @@ model RefreshToken {
   @@map("refreshTokens")
 }
 
-model Image {
+model File {
   id           Int      @id @default(autoincrement())
   diskType     DiskType
   path         String
   originalName String
   modifiedName String
+  type         FileType   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -80,5 +126,5 @@ model Image {
   userDetailId Int? @unique
   userDetail UserDetail? @relation(fields: [userDetailId], references: [id], onDelete: Cascade)
 
-  @@map("images")
+  @@map("files")
 }

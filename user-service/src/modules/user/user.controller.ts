@@ -3,65 +3,73 @@ import status from 'http-status';
 import catchAsync from '../../shared/catchAsync';
 import sendResponse from '../../shared/sendResponse';
 import { UserService } from './user.service';
+import { IUser } from './user.interface';
+import pick from '../../helpers/pick';
+import { userFilterableFields } from './user.constant';
+import { paginationFields } from '../../constant';
+import { UserInfoFromToken } from '../../types/common';
 
-
-const createUser = catchAsync(async (req: Request, res: Response) => {
-    const result = await UserService.createUser();
-
-    sendResponse(res, {
-        statusCode: status.OK,
-        success:true,
-        message: 'User created successfully',
-        data: result,
-    });
-});
+// Note: User creation is handled by auth signup route, not here
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-    const result = await UserService.getAllUsers();
+     const filters = pick(req.query, userFilterableFields);
+     const paginationOptions = pick(req.query, paginationFields);
+    const result = await UserService.getAllUsers(filters,paginationOptions,req.user as UserInfoFromToken);
 
     sendResponse(res, {
         statusCode: status.OK,
-        success:true,
-        message: 'Users are retrieved successfully',
+        success: true,
+        message: 'Users retrieved successfully',
         data: result,
     });
 });
 
 const getUserByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await UserService.getUserByID();
+    const { id } = req.params;
+    const result = await UserService.getUserByID(Number(id),req.user as UserInfoFromToken);
+
+    if (!result) {
+        return sendResponse(res, {
+            statusCode: status.NOT_FOUND,
+            success: false,
+            message: 'User not found',
+            data: null,
+        });
+    }
 
     sendResponse(res, {
         statusCode: status.OK,
-        success:true,
-        message: 'Single User retrieved successfully',
+        success: true,
+        message: 'User retrieved successfully',
         data: result,
     });
 });
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {
-    const result = await UserService.updateUser();
+    const { id } = req.params;
+    const result = await UserService.updateUser(Number(id), req.body as Partial<IUser>, req.user as UserInfoFromToken);
 
     sendResponse(res, {
         statusCode: status.OK,
-        success:true,
-        message: 'User is updated successfully',
+        success: true,
+        message: 'User updated successfully',
         data: result,
     });
 });
 
 const deleteUserByID = catchAsync(async (req: Request, res: Response) => {
-    const result = await UserService.deleteUserByID();
+    const { id } = req.params;
+    await UserService.deleteUserByID(Number(id),req.user as UserInfoFromToken);
 
     sendResponse(res, {
         statusCode: status.OK,
-        success:true,
-        message: 'User is deleted successfully',
-        data: result,
+        success: true,
+        message: 'User deleted successfully',
+        data: null,
     });
 });
 
 export const UserController = {
-    createUser,
     getAllUsers,
     getUserByID,
     updateUser,
