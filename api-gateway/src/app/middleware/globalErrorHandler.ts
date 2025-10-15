@@ -5,8 +5,9 @@ import { IGenericErrorMessages } from '../../interfaces/error';
 import ApiError from '../../errors/ApiError';
 import { ZodError } from 'zod';
 import handleZodError from '../../errors/handleZodError';
+import { appLogger } from './logger';
 // import handleCastError from '../../errors/handleCastError';
-import logger from './logger';
+
 
 const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
   // console.log('globalErrorHandler : ', error);
@@ -29,7 +30,7 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
     // statusCode = simplifiedError.statusCode;
     // message = simplifiedError.message;
     // errorMessages = simplifiedError?.errorMessages;
-    // logger.error(`Validation Error: ${message}`, {
+    // appLogger.error(`Validation Error: ${message}`, {
     //   ...logData,
     //   errorMessages,
     //   errorName: error.name,
@@ -40,7 +41,7 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
     statusCode = simplifiedError?.statusCode;
     message = simplifiedError?.message;
     errorMessages = simplifiedError?.errorMessages;
-    logger.error(`Zod Validation Error: ${message}`, {
+    appLogger.error(`Zod Validation Error: ${message}`, {
       ...logData,
       errorMessages,
       zodIssues: error.issues
@@ -51,7 +52,7 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
     // message = simplifiedError?.message;
     // errorMessages = simplifiedError?.errorMessages;
      
-    // logger.error(`Cast Error: ${message}`, {
+    // appLogger.error(`Cast Error: ${message}`, {
     //   ...logData,
     //   errorMessages,
     //   value: error.value,
@@ -64,7 +65,7 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
       path: key,
       message: `${key} already exists.`,
     }));
-    logger.error(`MongoDB Duplicate Key Error: ${message}`, {
+    appLogger.error(`MongoDB Duplicate Key Error: ${message}`, {
       ...logData,
       errorMessages,
       keyValue: error.keyValue,
@@ -83,17 +84,17 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
       : [];
     // Log based on status code severity
     if (statusCode >= 500) {
-      logger.error(`API Error (${statusCode}): ${message}`, {
+      appLogger.error(`API Error (${statusCode}): ${message}`, {
         ...logData,
         errorMessages
       });
     } else if (statusCode >= 400) {
-      logger.error(`API Error (${statusCode}): ${message}`, {
+      appLogger.error(`API Error (${statusCode}): ${message}`, {
         ...logData,
         errorMessages
       });
     } else {
-      logger.info(`API Error (${statusCode}): ${message}`, {
+      appLogger.info(`API Error (${statusCode}): ${message}`, {
         ...logData,
         errorMessages
       });
@@ -108,7 +109,7 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
           },
         ]
       : [];
-      logger.error(`Uncaught Exception: ${message}`, {
+      appLogger.error(`Uncaught Exception: ${message}`, {
         ...logData,
         errorMessages,
         name: error.name

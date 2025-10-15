@@ -12,7 +12,8 @@
     "prettier:check": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
     "prettier:fix": "prettier --write .",
     "lint:prettier": "npm run lint:check && npm run prettier:check",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "create:module": "ts-node-dev src/scripts/create-module.ts"
   },
   "keywords": [],
   "author": "",

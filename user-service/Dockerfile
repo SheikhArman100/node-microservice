@@ -14,16 +14,18 @@ RUN npm install
 COPY prisma ./prisma
 RUN npx prisma generate
 
-# Copy the rest of the application code
-COPY src ./src
+# Create logs directory with proper permissions
+RUN mkdir -p logs && chmod 755 logs
+
+# Copy the rest of the application code (but not src - it will be mounted)
 COPY tsconfig.json ./
 
-# Build the TypeScript code
-RUN npm run build
+# Build the TypeScript code (will be done at runtime with mounted src)
+# RUN npm run build
 
 # Expose the port the app runs on
 EXPOSE 3001
 EXPOSE 50053
 
-# Command to run the application
-CMD ["npm", "start"]
+# Command to run the application in development mode
+CMD ["npm", "run", "dev"]

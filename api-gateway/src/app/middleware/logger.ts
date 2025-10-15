@@ -19,33 +19,73 @@ const myFormat = printf(({ level, message, timestamp, ...metadata }) => {
 
 
 
-// Define transports array
-const transports = [];
-
-// Add file transport only in production
-if (process.env.NODE_ENV === 'production') {
-  const errorTransport = new DailyRotateFile({
-    filename: path.join(logDir, 'error-%DATE%.log'),
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: true,
-    maxSize: '20m',
-    maxFiles: '14d',
-    level: 'error'
-  });
-  transports.push(errorTransport);
-}
-
-// Always add console transport
-transports.push(new winston.transports.Console());
-
-// Create logger
-const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+// App logger - for server starts and general app logs
+export const appLogger = winston.createLogger({
+  level: 'info',
   format: combine(
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
     myFormat
   ),
-  transports: transports
+  transports: [
+    new DailyRotateFile({
+      filename: path.join(logDir, 'app-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d',
+      format: combine(
+        timestamp(),
+        winston.format.json({ space: 2 })
+      ),
+    }),
+  ],
 });
 
-export default logger;
+// Gateway logger - for routing information
+export const gatewayLogger = winston.createLogger({
+  level: 'info',
+  format: combine(
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    myFormat
+  ),
+  transports: [
+    new DailyRotateFile({
+      filename: path.join(logDir, 'gateway-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d',
+      format: combine(
+        timestamp(),
+        winston.format.json({ space: 2 })
+      ),
+    }),
+  ],
+});
+
+// Add console transports in development
+// if (process.env.NODE_ENV !== 'production') {
+//   appLogger.add(
+//     new winston.transports.Console({
+//       format: combine(
+//         winston.format.colorize(),
+//         winston.format.simple(),
+//         myFormat
+//       ),
+//     })
+//   );
+
+//   gatewayLogger.add(
+//     new winston.transports.Console({
+//       format: combine(
+//         winston.format.colorize(),
+//         winston.format.simple(),
+//         myFormat
+//       ),
+//     })
+//   );
+// }
+
+

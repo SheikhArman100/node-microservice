@@ -10,16 +10,15 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the application code
-COPY src ./src
+# Copy the rest of the application code (but not src - it will be mounted)
 COPY tsconfig.json ./
 
-# Build the TypeScript code
-RUN npm run build
+# Build the TypeScript code (will be done at runtime with mounted src)
+# RUN npm run build
 
 # Expose the REST API port and gRPC port
 EXPOSE 3002
 EXPOSE 50051
 
-# Command to run the application
-CMD ["npm", "start"]
+# Command to run the application in development mode
+CMD ["npm", "run", "dev"]

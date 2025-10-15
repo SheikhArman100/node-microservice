@@ -38,6 +38,12 @@ app.use(cookieParser());
 // Trust proxy to get the correct client IP
 app.set('trust proxy', true);
 
+app.use((req,res,next)=>{
+  console.log("urrrrrrrrrrrrrrrlll",req.url)
+ next()
+})
+
+
 
 /**
  * Health Check Endpoint
@@ -49,10 +55,17 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
+app.get('/api/v1', (req: Request, res: Response) => {
+  res.status(200).json({
+    success: true,
+    message: 'Welcome to User Server',
+  });
+});
+
 /**
  * Static file serving for local storage
  */
-app.use('/file', express.static('uploads'));
+app.use('/api/v1/file', express.static('uploads'));
 
 /**
  * API Routes

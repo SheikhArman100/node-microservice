@@ -35,10 +35,15 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Request logging is now handled in the routes with gatewayLogger
+
 // parser
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
+
+
+
 
 // Routes
 app.use('/api/v1', ApplicationRouters); // Use ApplicationRouters for all /api/v1 routes
