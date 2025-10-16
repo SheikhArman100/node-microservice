@@ -11,6 +11,10 @@ const app: Application = express();
 
 app.use(cookieParser());
 
+// Body parsers
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true }));
+
 // Trust proxy to get the correct client IP
 app.set('trust proxy', true);
 

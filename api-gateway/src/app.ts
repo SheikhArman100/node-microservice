@@ -37,10 +37,8 @@ app.use(limiter);
 
 
 
-// parser
-app.use(express.json());
+// parser (removed - services handle their own body parsing)
 app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }));
 
 
 

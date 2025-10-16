@@ -9,6 +9,10 @@ const app: Application = express();
 
 app.use(cookieParser());
 
+// parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Testing
 app.get('/', (req: Request, res: Response) => {
   return res.status(200).json({
