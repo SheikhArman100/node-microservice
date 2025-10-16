@@ -35,7 +35,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Request logging is now handled in the routes with gatewayLogger
+
 
 // parser
 app.use(express.json());
@@ -46,7 +46,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // Routes
-app.use('/api/v1', ApplicationRouters); // Use ApplicationRouters for all /api/v1 routes
+app.use('', ApplicationRouters); 
 
 // Health Check
 app.get('/', (req: Request, res: Response) => {

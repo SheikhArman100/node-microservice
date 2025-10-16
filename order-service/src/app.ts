@@ -1,5 +1,4 @@
 import cookieParser from 'cookie-parser';
-import cors from 'cors';
 import express, { Application, Request, Response } from 'express';
 
 import config from './config';
@@ -9,30 +8,9 @@ import globalErrorHandler from './middleware/globalErrorHandler';
 
 const app: Application = express();
 
-/**
- * Allowed domains for CORS
- */
-const allowedURL = [
-  'http://192.168.68.120:3017',
-  'http://192.168.68.107:3017',
-];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedURL.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  }),
-);
 
-// Body parsers
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: true }));
+
 app.use(cookieParser());
 
 // Trust proxy to get the correct client IP

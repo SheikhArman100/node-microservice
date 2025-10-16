@@ -1,5 +1,6 @@
-import express, { Request, Response } from 'express';
-import { createProxyMiddleware, RequestHandler } from 'http-proxy-middleware';
+// src/routes/ApplicationRouters.ts
+import express, { RequestHandler } from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import config from '../../config';
 import { gatewayLogger } from '../middleware/logger';
 
@@ -10,45 +11,49 @@ interface ServiceConfig {
   target: string;
 }
 
+// Define all microservices
 const services: ServiceConfig[] = [
   { route: '/users', target: config.user_service_url || '' },
   { route: '/products', target: config.product_service_url || '' },
   { route: '/orders', target: config.order_service_url || '' },
 ];
 
+/**
+ * Creates a proxy middleware for a service.
+ * Automatically prepends `/api/v1` on the microservice side.
+ */
 function createTypedProxy(target: string, route: string): RequestHandler {
   return createProxyMiddleware({
     target,
     changeOrigin: true,
     pathRewrite: (path: string) => {
-      // Remove only the route prefix, keep everything else
-      const newPath = path.replace(route, '');
-      return newPath;
+      // Since Express strips the route prefix, we just prepend /api/v1
+      // /auth/signin -> /api/v1/auth/signin
+      const rewritten = `/api/v1${path}`;
+      return rewritten;
     },
-
     on: {
-      proxyReq: (proxyReq, req, res) => {
+      proxyReq: (proxyReq, req) => {
         const expressReq = req as any;
-        gatewayLogger.info(`Gateway Route`, {
+        gatewayLogger.info('Gateway Route', {
           clientRequest: `${expressReq.method} ${expressReq.originalUrl}`,
           routedTo: target,
           serviceReceives: `${expressReq.method} ${proxyReq.path}`,
         });
       },
-      error: (err, req, res) => {
+      error: (err, req) => {
         const expressReq = req as any;
-        gatewayLogger.error(`Proxy Error`, {
+        gatewayLogger.error('Proxy Error', {
           url: expressReq.originalUrl,
           error: err.message,
           target,
         });
-        
-        
       },
     },
   });
 }
 
+// Register all service proxies
 services.forEach(({ route, target }) => {
   router.use(route, createTypedProxy(target, route));
 });
