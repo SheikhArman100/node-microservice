@@ -1,12 +1,23 @@
 import { Product } from './product.model';
 import { IProduct, IProductFilters } from './product.interface';
 import { productSearchableFields } from './product.constant';
-import { IGenericResponse, IPaginationOptions } from '../../../interfaces/common';
+import { IGenericResponse, IPaginationOptions, UserInfoFromToken } from '../../../interfaces/common';
 import { calculatePagination } from '../../../helpers/paginationHelper';
 import { SortOrder } from 'mongoose';
+import ApiError from '../../../errors/ApiError';
+import status from 'http-status';
 
-const createProduct = async (productData: Partial<IProduct>): Promise<IProduct | null> => {
-    const result = await Product.create(productData);
+const createProduct = async (productData: Partial<IProduct>,userInfo:UserInfoFromToken): Promise<IProduct | null> => {
+    const result = await Product.create({
+        name:productData.name,
+        imagelink:productData.imagelink,
+        category:productData.category,
+        stock:productData.stock,
+        createdBy:userInfo.id
+    });
+    if(!result){
+        throw new ApiError(status.BAD_REQUEST,"Failed to create product")
+    }
     return result;
 };
 

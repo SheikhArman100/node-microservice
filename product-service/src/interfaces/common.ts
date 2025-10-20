@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 
 import { IGenericErrorMessages } from './error';
+import { ENUM_USER_ROLE } from '../enum';
 
 export type IGenericErrorResponse = {
   statusCode: number;
@@ -37,9 +38,10 @@ export type UserRole = 'user' | 'admin'
  * User information in jwt token
  */
 export type UserInfoFromToken = {
-  /** User database id */
-  id: Types.ObjectId;
-  role: UserRole;
+  id: string; 
+  role: ENUM_USER_ROLE.ADMIN|ENUM_USER_ROLE.USER
+  roleLevel: number;
+  email:string,
   iat: number;
   exp: number;
 };

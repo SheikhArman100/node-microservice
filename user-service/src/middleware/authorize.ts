@@ -28,7 +28,7 @@ const authorize = (requiredPermission: string) => {
 
       // Check if all required headers are present
       if (!userId || !userEmail || !userRole || !userRoleLevel || !userPermissionsHeader) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, 'Authentication required');
+        throw new ApiError(httpStatus.FORBIDDEN, 'Authentication required');
       }
 
       // Parse permissions from header
@@ -36,7 +36,7 @@ const authorize = (requiredPermission: string) => {
       try {
         userPermissions = JSON.parse(userPermissionsHeader);
       } catch (error) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid authentication data');
+        throw new ApiError(httpStatus.FORBIDDEN, 'Invalid authentication data');
       }
 
       // Reconstruct user object from headers

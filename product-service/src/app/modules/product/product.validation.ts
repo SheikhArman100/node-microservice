@@ -5,7 +5,9 @@ const createProductZodSchema = z.object({
         name: z.string({
             error: 'Name is required',
         }).min(1, 'Name cannot be empty'),
-        imagelink: z.string().url('Invalid image URL').optional(),
+        imagelink: z.string({
+            error: 'Image link is required',
+        }).min(1, 'Image link cannot be empty'),
         stock: z.number({
             error: 'Stock is required',
         }).min(0, 'Stock cannot be negative'),

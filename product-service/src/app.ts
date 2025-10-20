@@ -20,6 +20,12 @@ app.get('/', (req: Request, res: Response) => {
   message: 'Welcome to Product Service Api',
   });
 });
+app.get('/api/v1', (req: Request, res: Response) => {
+  return res.status(200).json({
+    success: true,
+  message: 'Welcome to Product Service Api',
+  });
+});
 
 // Routes
 app.use('/api/v1', ApplicationRouters);

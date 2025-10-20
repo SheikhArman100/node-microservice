@@ -2,6 +2,7 @@ import express from 'express';
 import validateRequest from '../../middleware/validateRequest';
 import { ProductController } from './product.controller';
 import { ProductValidation } from './product.validation';
+import authorize from '../../middleware/authorize';
 // import auth from '../../../middlewares/auth';
 // import { ENUM_USER_ROLE } from '../../../enums/user';
 
@@ -9,12 +10,14 @@ const router = express.Router();
 
 router.post(
     '/',
+    authorize("create_product"),
     validateRequest(ProductValidation.createProductZodSchema),
     ProductController.createProduct
 );
 
 router.get(
     '/',
+    authorize("read_product"),
     // auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.USER), 
     ProductController.getAllProducts
 );

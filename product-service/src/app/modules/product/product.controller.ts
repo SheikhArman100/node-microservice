@@ -7,14 +7,11 @@ import { productFilterableFields } from './product.constant';
 import httpStatus from 'http-status';
 import pick from '../../../helpers/pick';
 import { paginationFields } from '../../../constant';
+import { IProduct } from './product.interface';
+import { UserInfoFromToken } from '../../../interfaces/common';
 
 const createProduct = catchAsync(async (req: Request, res: Response) => {
-    const productData = {
-        ...req.body,
-        createdBy: req.user?.id,  // User ID from JWT token
-        updatedBy: req.user?.id,
-    };
-    const result = await ProductService.createProduct(productData);
+    const result = await ProductService.createProduct(req.body as Partial<IProduct>,req.user as UserInfoFromToken);
 
     sendResponse(res, {
         statusCode: httpStatus.CREATED,

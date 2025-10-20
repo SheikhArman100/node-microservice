@@ -5,8 +5,8 @@ export type IProduct = {
     imagelink?: string;
     stock: number;
     category: string;
-    createdBy: string;  // User ID as string from JWT
-    updatedBy: string;  // User ID as string from JWT
+    createdBy: string;  
+    updatedBy: string;  
 }
 
 export type ProductModel = Model<

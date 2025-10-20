@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import ApiError from '../../errors/ApiError';
-import { ENUM_PERMISSION } from '../../enum/rbac';
+
 
 /**
  * Authorization middleware that checks if the authenticated user has the required permission.
@@ -16,7 +16,7 @@ import { ENUM_PERMISSION } from '../../enum/rbac';
  * @param {ENUM_PERMISSION} requiredPermission - The permission required to access the route
  * @returns {Function} An Express middleware function.
  */
-const authorize = (requiredPermission: ENUM_PERMISSION) => {
+const authorize = (requiredPermission: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       // Read user info from headers (forwarded by gateway)
@@ -28,7 +28,7 @@ const authorize = (requiredPermission: ENUM_PERMISSION) => {
 
       // Check if all required headers are present
       if (!userId || !userEmail || !userRole || !userRoleLevel || !userPermissionsHeader) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, 'Authentication required');
+        throw new ApiError(httpStatus.FORBIDDEN, 'Authentication required');
       }
 
       // Parse permissions from header
@@ -36,7 +36,7 @@ const authorize = (requiredPermission: ENUM_PERMISSION) => {
       try {
         userPermissions = JSON.parse(userPermissionsHeader);
       } catch (error) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid authentication data');
+        throw new ApiError(httpStatus.FORBIDDEN, 'Invalid authentication data');
       }
 
       // Reconstruct user object from headers
@@ -50,7 +50,7 @@ const authorize = (requiredPermission: ENUM_PERMISSION) => {
 
       // Check if user has the required permission
       if (!userPermissions.includes(requiredPermission)) {
-        throw new ApiError(httpStatus.FORBIDDEN, `Access denied. Required permission: ${requiredPermission}`);
+        throw new ApiError(httpStatus.FORBIDDEN, `You don't have access to this route`);
       }
 
       next();

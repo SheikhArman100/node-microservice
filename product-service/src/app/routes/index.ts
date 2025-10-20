@@ -1,23 +1,17 @@
 import express from 'express';
+import { ProductRoutes } from '../modules/product/product.route';
 
 
 const router = express.Router();
 
-// const moduleRoutes = [
-//   // {
-//   //   path: '/auth',
-//   //   route: AuthRoutes,
-//   // },
-//   // {
-//   //   path: '/document',
-//   //   route: documentRoute,
-//   // },
-//   // {
-//   //   path: '/search',
-//   //   route: SearchRoutes,
-//   // },
-// ];
+const moduleRoutes = [
+  {
+    path: '/product',
+    route: ProductRoutes,
+  },
+  
+];
 
-// moduleRoutes.forEach(route => router.use(route.path, route.route));
+moduleRoutes.forEach(route => router.use(route.path, route.route));
 
 export const ApplicationRouters = router;
