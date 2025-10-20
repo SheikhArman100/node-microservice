@@ -11,11 +11,17 @@ interface ServiceConfig {
   target: string;
 }
 
-// Define all microservices
+// Define all microservices with public/private prefixes
 const services: ServiceConfig[] = [
-  { route: '/users', target: config.user_service_url || '' },
-  { route: '/products', target: config.product_service_url || '' },
-  { route: '/orders', target: config.order_service_url || '' },
+  // Public routes (no auth required)
+  { route: '/public/users', target: config.user_service_url || '' },
+  { route: '/public/products', target: config.product_service_url || '' },
+  { route: '/public/orders', target: config.order_service_url || '' },
+
+  // Private routes (auth required)
+  { route: '/private/users', target: config.user_service_url || '' },
+  { route: '/private/products', target: config.product_service_url || '' },
+  { route: '/private/orders', target: config.order_service_url || '' },
 ];
 
 /**

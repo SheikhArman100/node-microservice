@@ -5,7 +5,8 @@ import rateLimit from 'express-rate-limit';
 import globalErrorHandler from './app/middleware/globalErrorHandler';
 import cookieParser from 'cookie-parser';
 import config from './config';
-import { ApplicationRouters } from './app/routes'; // Import ApplicationRouters
+import { ApplicationRouters } from './app/routes';
+import { authenticateAndForward } from './app/middleware/auth';
 
 const app: Application = express();
 
@@ -43,8 +44,11 @@ app.use(cookieParser());
 
 
 
-// Routes
-app.use('', ApplicationRouters); 
+// Apply auth middleware ONLY to private routes
+app.use('/private', authenticateAndForward);
+
+// Public routes and all other routes go through without auth
+app.use('', ApplicationRouters);
 
 // Health Check
 app.get('/', (req: Request, res: Response) => {

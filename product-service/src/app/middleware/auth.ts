@@ -1,56 +1,63 @@
-// import { NextFunction, Request, Response } from 'express';
-// import httpStatus from 'http-status';
-// import { Secret } from 'jsonwebtoken';
-// import config from '../../config';
-// import ApiError from '../../errors/ApiError';
-// import { jwtHelpers } from '../../helpers/jwtHelpers';
+import { NextFunction, Request, Response } from 'express';
+import httpStatus from 'http-status';
+import ApiError from '../../errors/ApiError';
+import { ENUM_PERMISSION } from '../../enum/rbac';
 
-// /**
-//  * Authentication middleware that verifies the presence and validity of a JWT token
-//  * and checks if the user has the required role(s) to access a route.
-//  *
-//  * This function accepts a list of required roles and returns an Express middleware function
-//  * that checks the following:
-//  * 1. Retrieves the authorization token from the request headers.
-//  * 2. Validates that the token is present and correctly formatted as a "Bearer" token.
-//  * 3. Verifies the JWT token using the configured secret.
-//  * 4. Attaches the verified user data to the request object for downstream middleware or controllers.
-//  * 5. Checks if the verified user's role matches any of the required roles (if specified).
-//  * 6. If the user is authorized, the request proceeds to the next middleware function; otherwise, it throws an error.
-//  *
-//  * @param {string[]} requiredRoles - A list of roles that are allowed to access the route.
-//  * @returns {Function} An Express middleware function.
-//  */
-// const auth =
-//   (...requiredRoles: string[]) =>
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//       //get authorization token
-//       const authHeader: any =
-//         req.headers.authorization || req.headers.Authorization;
-//       if (!authHeader || !authHeader.startsWith('Bearer '))
-//         throw new ApiError(httpStatus.FORBIDDEN, 'You are not authorized');
+/**
+ * Authorization middleware that checks if the authenticated user has the required permission.
+ * User information is read from HTTP headers forwarded by the API Gateway.
+ *
+ * Headers expected:
+ * - x-user-id: User ID
+ * - x-user-email: User email
+ * - x-user-role: User role
+ * - x-user-permissions: JSON string of user permissions
+ *
+ * @param {ENUM_PERMISSION} requiredPermission - The permission required to access the route
+ * @returns {Function} An Express middleware function.
+ */
+const authorize = (requiredPermission: ENUM_PERMISSION) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Read user info from headers (forwarded by gateway)
+      const userId = req.headers['x-user-id'] as string;
+      const userEmail = req.headers['x-user-email'] as string;
+      const userRole = req.headers['x-user-role'] as string;
+      const userRoleLevel = req.headers['x-user-role-level'] as string;
+      const userPermissionsHeader = req.headers['x-user-permissions'] as string;
 
-//       const token = authHeader.split(' ')[1];
+      // Check if all required headers are present
+      if (!userId || !userEmail || !userRole || !userRoleLevel || !userPermissionsHeader) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, 'Authentication required');
+      }
 
-//       // verify token
-//       let verifiedUser = null;
+      // Parse permissions from header
+      let userPermissions: string[];
+      try {
+        userPermissions = JSON.parse(userPermissionsHeader);
+      } catch (error) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid authentication data');
+      }
 
-//       verifiedUser = jwtHelpers.verifyToken(
-//         token,
-//         config.jwt.access_secret as Secret,
-//       );
+      // Reconstruct user object from headers
+      req.user = {
+        id: parseInt(userId),
+        email: userEmail,
+        role: userRole,
+        roleLevel: parseInt(userRoleLevel),
+        permissions: userPermissions
+      };
 
-//       req.user = verifiedUser;
+      // Check if user has the required permission
+      if (!userPermissions.includes(requiredPermission)) {
+        throw new ApiError(httpStatus.FORBIDDEN, `Access denied. Required permission: ${requiredPermission}`);
+      }
 
-//       // role guard
-//       if (requiredRoles.length && !requiredRoles.includes(verifiedUser.role)) {
-//         throw new ApiError(httpStatus.FORBIDDEN, 'You have no access.');
-//       }
-//       next();
-//     } catch (error) {
-//       next(error);
-//     }
-//   };
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
 
-// export default auth;
+export default authorize;

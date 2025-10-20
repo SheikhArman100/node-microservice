@@ -20,7 +20,6 @@ app.set('trust proxy', true);
 
 
 
-
 /**
  * Health Check Endpoint
  */

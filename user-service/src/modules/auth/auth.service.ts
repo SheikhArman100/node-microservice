@@ -11,7 +11,7 @@ import { IUser } from '../user/user.interface';
 import { IFile } from '../../interfaces/common';
 import logger from '../../shared/logger';
 import { UserInfoFromToken } from '../../types/common';
-import { ENUM_ROLE } from '../../enum/rbac';
+import { ENUM_ROLE, ROLE_PERMISSIONS } from '../../enum/rbac';
 import config from '../../config';
 
 //signup
@@ -35,7 +35,7 @@ const signup = async (payload: IUser, multerFile?: IFile) => {
   }
   const hashedPassword = await bcrypt.hash(
     payload.password as string,
-    Number(config.jwt.bcrypt_salt_rounds) || 10,
+    Number(config.bcrypt_salt_rounds) || 10,
   );
 
   // Get role ID from database based on role string
@@ -225,24 +225,30 @@ const signin = async (
     throw new ApiError(status.UNPROCESSABLE_ENTITY, 'Password is incorrect.');
   }
 
-  // Generate Access Token
+  // Get user permissions based on role
+  const userRole = user.userRole?.name as ENUM_ROLE || ENUM_ROLE.USER;
+  const permissions = ROLE_PERMISSIONS[userRole] || [];
+
+  // Generate Access Token with permissions and roleLevel
   const accessToken = jwtHelpers.createToken(
     {
       id: user.id,
-      role: user.userRole?.name || 'user',
+      email: user.email,
+      role: userRole,
       roleLevel: user.userRole?.level || 10,
-      email: user.email
+      permissions: [...permissions] 
     },
     config.jwt.access_secret as Secret,
     config.jwt.access_expires_in as string,
   );
 
-  // Generate Refresh Token
+  // Generate Refresh Token with permissions and roleLevel
   const refreshToken = jwtHelpers.createToken(
     {
       id: user.id,
-      role: user.userRole?.name || 'user',
-      roleLevel: user.userRole?.level || 10
+      role: userRole,
+      roleLevel: user.userRole?.level || 10,
+      permissions: [...permissions] 
     },
     config.jwt.refresh_secret as Secret,
     config.jwt.refresh_expires_in as string,
@@ -298,24 +304,30 @@ const updateToken = async (refreshToken: string) => {
     throw new ApiError(status.UNAUTHORIZED, 'You are not authorized');
   }
 
-  // Generate new Access Token
+  // Get user permissions based on role
+  const userRole = foundToken.user.userRole?.name as ENUM_ROLE || ENUM_ROLE.USER;
+  const permissions = ROLE_PERMISSIONS[userRole] || [];
+
+  // Generate new Access Token with permissions and roleLevel
   const newAccessToken = jwtHelpers.createToken(
     {
       id: foundToken.user.id,
-      role: foundToken.user.userRole?.name || 'user',
-      roleLevel: foundToken.user.userRole?.level || 10,
       email: foundToken.user.email,
+      role: userRole,
+      roleLevel: foundToken.user.userRole?.level || 10,
+      permissions: [...permissions] // Include permissions in JWT
     },
     config.jwt.access_secret as Secret,
     config.jwt.access_expires_in as string,
   );
 
-  // Generate new Refresh Token
+  // Generate new Refresh Token with permissions and roleLevel
   const newRefreshToken = jwtHelpers.createToken(
     {
       id: foundToken.user.id,
-      role: foundToken.user.userRole?.name || 'user',
+      role: userRole,
       roleLevel: foundToken.user.userRole?.level || 10,
+      permissions: [...permissions] // Include permissions in refresh token too
     },
     config.jwt.refresh_secret as Secret,
     config.jwt.refresh_expires_in as string,
@@ -380,8 +392,10 @@ const checkUser = async (refreshToken: string) => {
     refreshToken,
     config.jwt.refresh_secret as Secret,
   );
+  console.log("verified user",verifiedUser)
+  console.log("check token",checkToken)
 
-  if (verifiedUser.id !== checkToken.userId.toString()) {
+  if (verifiedUser.id.toString() !== checkToken.userId.toString()) {
     throw new ApiError(status.UNAUTHORIZED, 'You are not authorized');
   }
 

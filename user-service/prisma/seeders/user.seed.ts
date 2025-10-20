@@ -10,7 +10,7 @@ export async function seedUsers() {
 
   const defaultPassword = await bcrypt.hash(
       "123456" as string,
-      10,
+      Number(config.bcrypt_salt_rounds) || 10,
     );
 
   // Get role IDs from database (simplified approach)
