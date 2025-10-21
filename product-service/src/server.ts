@@ -4,6 +4,7 @@ import app from './app';
 import config from './config';
 import logger from './app/middleware/logger';
 import rabbitMQ from './shared/rabbitmq';
+import setupQueues from './shared/queueSetup';
 
 let server: Server;
 
@@ -15,6 +16,9 @@ async function main() {
     // Connect to RabbitMQ
     await rabbitMQ.connect();
     console.log(`Product service is connected with RabbitMQ`);
+
+    // Setup RabbitMQ queues, exchanges, and bindings
+    await setupQueues();
 
     server = app.listen(config.port, () => {
       console.log(`Product service listening on port ${config.port}`);

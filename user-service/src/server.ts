@@ -5,6 +5,7 @@ import { prisma } from './client';
 import config from './config/index';
 import logger from './shared/logger';
 import rabbitMQ from './shared/rabbitmq';
+import setupQueues from './shared/queueSetup';
 
 let server: Server;
 
@@ -20,6 +21,9 @@ async function main() {
     // Connect to RabbitMQ
     await rabbitMQ.connect();
     logger.info('User server is connected with RabbitMQ successfully!!');
+
+    // Setup RabbitMQ queues, exchanges, and bindings
+    await setupQueues();
 
     server = app.listen(config.port, () => {
       logger.info(`User Server started successfully on port ${config.port}`);
