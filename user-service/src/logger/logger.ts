@@ -1,71 +1,73 @@
-import path from 'path';
 import winston from 'winston';
+import path from 'path';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
-// Custom format for better readability
-const customFormat = winston.format.printf(
-  ({ level, message, timestamp, ...metadata }) => {
-    const formattedMessage = `${timestamp} ${level.toUpperCase()}: ${message}`;
+// Define log directory and file paths
+const logDir = path.join(process.cwd(), 'logs');
 
-    // Pretty print the metadata
-    if (Object.keys(metadata).length) {
-      const prettyMetadata = JSON.stringify(metadata, null, 2);
-      return `${formattedMessage}\nMetadata:\n${prettyMetadata}\n`;
-    }
+// Define log formats
+const { combine, timestamp, printf } = winston.format;
 
-    return formattedMessage;
-  }
-);
+// Custom log format
+const myFormat = printf(({ level, message, timestamp, ...metadata }) => {
+  const metaString = Object.keys(metadata).length 
+    ? `\n${JSON.stringify(metadata, null, 2)}` 
+    : '';
+  
+  return `${timestamp} [${level}]: ${message}${metaString}`;
+});
 
+
+
+// Default logger - for server starts and general app logs
 const logger = winston.createLogger({
   level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss',
-    }),
+  format: combine(
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.errors({ stack: true }),
-    customFormat
+    myFormat
   ),
   transports: [
     // App logs
     new DailyRotateFile({
-      filename: path.join(process.cwd(), 'logs', '%DATE%-app.log'),
+      filename: path.join(logDir, 'app-%DATE%.log'),
       datePattern: 'YYYY-MM-DD',
       zippedArchive: true,
       maxSize: '20m',
       maxFiles: '14d',
-      format: winston.format.combine(
-        winston.format.timestamp(),
+      format: combine(
+        timestamp(),
         winston.format.json({ space: 2 })
       ),
     }),
     // Error logs
     new DailyRotateFile({
-      filename: path.join(process.cwd(), 'logs', '%DATE%-error.log'),
+      filename: path.join(logDir, 'error-%DATE%.log'),
       datePattern: 'YYYY-MM-DD',
       zippedArchive: true,
       maxSize: '20m',
       maxFiles: '14d',
       level: 'error',
-      format: winston.format.combine(
-        winston.format.timestamp(),
+      format: combine(
+        timestamp(),
         winston.format.json({ space: 2 })
       ),
     }),
   ],
 });
 
-// Add console transport in development with colorization
-if (process.env.NODE_ENV !== 'production') {
+if(process.env.NODE_ENV !== 'production') {
   logger.add(
     new winston.transports.Console({
-      format: winston.format.combine(
+      format: combine(
         winston.format.colorize(),
         winston.format.simple(),
-        customFormat
+        myFormat
       ),
     })
   );
 }
 
 export default logger;
+
+
