@@ -1,14 +1,13 @@
 import { Schema, model } from 'mongoose';
 
-export interface IUserCache {
-  _id: string; // User ID from user-service
+export interface IUser {
+  _id: string; 
   name: string;
   email: string;
-  // Add other user fields as needed
   lastUpdated: Date;
 }
 
-const UserCacheSchema = new Schema<IUserCache>({
+const UserSchema = new Schema<IUser>({
   _id: {
     type: String,
     required: true,
@@ -30,6 +29,6 @@ const UserCacheSchema = new Schema<IUserCache>({
 });
 
 // Add indexes for better performance
-UserCacheSchema.index({ email: 1 });
+UserSchema.index({ email: 1 });
 
-export const UserCache = model<IUserCache>('UserCache', UserCacheSchema);
+export const User = model<IUser>('User', UserSchema);

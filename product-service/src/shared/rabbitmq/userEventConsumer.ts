@@ -1,4 +1,4 @@
-import { UserCache } from '../../app/modules/user/userCache.model';
+import { UserCache } from '../../app/modules/user/user.model';
 import rabbitMQ from './rabbitmq';
 
 export const startUserEventConsumer = async () => {

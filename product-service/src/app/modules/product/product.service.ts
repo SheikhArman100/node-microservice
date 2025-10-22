@@ -1,5 +1,5 @@
 import { Product } from './product.model';
-import { UserCache } from '../user/userCache.model';
+import { UserCache } from '../user/user.model';
 import { IProduct, IProductFilters } from './product.interface';
 import { productSearchableFields } from './product.constant';
 import { IGenericResponse, IPaginationOptions, UserInfoFromToken } from '../../../interfaces/common';
