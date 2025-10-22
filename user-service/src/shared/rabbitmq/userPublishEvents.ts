@@ -1,5 +1,5 @@
 
-import logger from '../../logger/logger';
+import logger, { eventLogger } from '../../logger/logger';
 import rabbitMQ from './rabbitmq';
 
 
@@ -7,9 +7,9 @@ export interface UserEventData {
   id: number;
   name: string;
   email: string;
+  role: string;
   phoneNumber?: string;
-  isVerified: boolean;
-  // Add other fields as needed
+  
 }
 
 export const publishUserEvent = async (eventType: 'user.created' | 'user.updated' | 'user.deleted', userData: UserEventData) => {
@@ -27,9 +27,9 @@ export const publishUserEvent = async (eventType: 'user.created' | 'user.updated
       persistent: true, 
     });
 
-    logger.info(`Published ${eventType} event for user ${userData.id}`);
+    eventLogger.info(`Published ${eventType} event for user ${userData.id}`);
   } catch (error) {
-    logger.error('Failed to publish user event', { error, eventType, userId: userData.id });
+    eventLogger.error('Failed to publish user event', { error, eventType, userId: userData.id });
     throw error;
   }
 };

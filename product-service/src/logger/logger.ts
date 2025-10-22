@@ -68,3 +68,26 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export default logger;
+
+
+export const eventLogger = winston.createLogger({
+  level: 'info',
+  format: combine(
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    myFormat
+  ),
+  transports: [
+    new DailyRotateFile({
+      filename: path.join(logDir, 'event-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d',
+      format: combine(
+        timestamp(),
+        winston.format.json({ space: 2 })
+      ),
+    }),
+  ],
+});

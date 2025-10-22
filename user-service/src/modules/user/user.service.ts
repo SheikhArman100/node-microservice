@@ -7,7 +7,7 @@ import { userSearchableFields } from './user.constant';
 import { UserInfoFromToken } from '../../types/common';
 import ApiError from '../../errors/ApiError';
 import status from 'http-status';
-import { publishUserEvent } from '../../shared/rabbitmq/userEvents';
+import { publishUserEvent } from '../../shared/rabbitmq/userPublishEvents';
 
 // Note: User creation is handled by auth service signup, not here
 

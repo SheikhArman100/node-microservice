@@ -9,11 +9,11 @@ import { sendEmail } from '../../helpers/nodeMailer';
 import { parseExpirationTime } from '../../utils';
 import { IUser } from '../user/user.interface';
 import { IFile } from '../../interfaces/common';
-import logger from '../../logger/logger';
+import logger, { eventLogger } from '../../logger/logger';
 import { UserInfoFromToken } from '../../types/common';
 import { ENUM_ROLE, ROLE_PERMISSIONS } from '../../enum/rbac';
 import config from '../../config';
-import { publishUserEvent } from '../../shared/rabbitmq/userEvents';
+import { publishUserEvent } from '../../shared/rabbitmq/userPublishEvents';
 
 //signup
 const signup = async (payload: IUser, multerFile?: IFile) => {
@@ -29,28 +29,21 @@ const signup = async (payload: IUser, multerFile?: IFile) => {
       'Email or PhoneNumber already exists',
     );
   }
+  
 
   // Hash the password
-  if (!payload.password) {
-    throw new ApiError(status.BAD_REQUEST, 'Password is required');
-  }
   const hashedPassword = await bcrypt.hash(
     payload.password as string,
     Number(config.bcrypt_salt_rounds) || 10,
   );
 
   // Get role ID from database based on role string
-  let roleId: number | undefined;
-  if (payload.role) {
-    const roleEnumValue = payload.role === 'admin' ? ENUM_ROLE.ADMIN : ENUM_ROLE.USER;
-    const roleRecord = await prisma.role.findFirst({
-      where: { name: roleEnumValue }
-    });
-    if (roleRecord) {
-      roleId = roleRecord.id;
-    }
+  const roleDetails = await prisma.role.findFirst({
+    where: { name:"user" },
+  });
+  if(!roleDetails){
+    throw new ApiError(status.BAD_REQUEST,"Invalid role provided")
   }
-
   // Create user with roleId
   const newUser = await prisma.user.create({
     data: {
@@ -59,7 +52,7 @@ const signup = async (payload: IUser, multerFile?: IFile) => {
       phoneNumber: payload.phoneNumber,
       password: hashedPassword,
       isVerified: false,
-      roleId: roleId,
+      roleId: roleDetails.id,
     },
   });
   if (!newUser) {
@@ -85,28 +78,24 @@ const signup = async (payload: IUser, multerFile?: IFile) => {
     });
   }
 
-  // Get user with role for JWT token
-  const userWithRole = await prisma.user.findUnique({
-    where: { id: newUser.id },
-    include: { userRole: true }
-  });
+ 
 
   //send verifyToken
   const emailVerifyToken = jwtHelpers.createToken(
     {
-      id: userWithRole!.id,
-      email: userWithRole!.email,
-      role: userWithRole!.userRole?.name || 'user', // Use role name from relation
+      id: newUser.id,
+      email: newUser.email,
+      role: roleDetails.name || 'user', 
     },
     config.jwt.email_verify_secret as Secret,
     config.jwt.email_verify_expires_in as string,
   );
   // Send Email Verification Link
   sendEmail(
-    userWithRole!.email,
+    newUser.email,
     `
     <div>
-      <p>Hi, ${userWithRole!.name}</p>
+      <p>Hi, ${newUser.name}</p>
       <p>Welcome! Please verify your email address by clicking the link below:</p>
       <p>
         <a href="${config.admin_client_url}/auth/verify-email?token=${emailVerifyToken}">
@@ -121,18 +110,17 @@ const signup = async (payload: IUser, multerFile?: IFile) => {
     'Verify Your Email',
   );
 
-  // Publish user created event
+  // // Publish user created event
   try {
     await publishUserEvent('user.created', {
       id: newUser.id,
       name: newUser.name,
       email: newUser.email,
-      phoneNumber: newUser.phoneNumber || undefined,
-      isVerified: newUser.isVerified,
+      role: roleDetails.name,
+      phoneNumber: newUser.phoneNumber ,
     });
   } catch (error) {
-    logger.error('Failed to publish user created event', { error, userId: newUser.id });
-    // Don't fail signup if event publishing fails
+    eventLogger.info('Failed to publish user created event', { error, userId: newUser.id });
   }
 
   return {

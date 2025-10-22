@@ -14,18 +14,14 @@ export const startUserEventConsumer = async () => {
 
     // Consume messages from the queue
     channel.consume('user-events-queue', async (msg: any) => {
-      console.log('🔍 DEBUG: Consumer received message:', !!msg);
       if (msg) {
-        console.log('🔍 DEBUG: Message content:', msg.content.toString());
         try {
           const message = JSON.parse(msg.content.toString());
-          console.log('🔍 DEBUG: Parsed message:', message);
           eventLogger.info('📨 Received user event:', message);
 
           const { event, user } = message;
 
           if (event === 'user.created' || event === 'user.updated') {
-            console.log('🔍 DEBUG: Attempting to upsert user:', user.id);
             // Upsert user data into cache
             await prisma.user.upsert({
               where: { id: user.id.toString() },
@@ -42,26 +38,20 @@ export const startUserEventConsumer = async () => {
               }
             });
 
-            console.log('🔍 DEBUG: User upsert successful');
             eventLogger.info(`✅ Cached user ${user.id} (${event})`);
           } else if (event === 'user.deleted') {
-            console.log('🔍 DEBUG: Attempting to delete user:', user.id);
             // Remove user from cache
             await prisma.user.delete({ where: { id: user.id.toString() } });
             eventLogger.info(`🗑️ Removed user ${user.id} from cache`);
           }
 
-          console.log('🔍 DEBUG: Acknowledging message');
           // Acknowledge the message
           channel.ack(msg);
         } catch (error) {
-          console.error('❌ Error processing user event:', error);
           logger.error('❌ Error processing user event:', error);
           // Reject the message and requeue
           channel.nack(msg, false, true);
         }
-      } else {
-        console.log('🔍 DEBUG: Received null/empty message');
       }
     });
 
