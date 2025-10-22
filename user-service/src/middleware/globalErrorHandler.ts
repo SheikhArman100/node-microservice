@@ -6,7 +6,8 @@ import ApiError from '../errors/ApiError';
 import handleValidationError from '../errors/handleValidationError';
 import handleZodError from '../errors/handleZodError';
 import { IGenericErrorMessages } from '../interfaces/error';
-import logger from '../shared/logger';
+import logger from '../logger/logger';
+
 
 /**
  * Global error handler for Express, tailored for Prisma, Zod, and TypeScript.

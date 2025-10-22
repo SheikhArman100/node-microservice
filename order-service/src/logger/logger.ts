@@ -27,6 +27,19 @@ const logger = winston.createLogger({
     customFormat
   ),
   transports: [
+    // App logs
+    new DailyRotateFile({
+      filename: path.join(process.cwd(), 'logs', '%DATE%-app.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d',
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json({ space: 2 })
+      ),
+    }),
+    // Error logs
     new DailyRotateFile({
       filename: path.join(process.cwd(), 'logs', '%DATE%-error.log'),
       datePattern: 'YYYY-MM-DD',
@@ -38,22 +51,6 @@ const logger = winston.createLogger({
         winston.format.timestamp(),
         winston.format.json({ space: 2 })
       ),
-    }),
-    new DailyRotateFile({
-      filename: path.join(process.cwd(), 'logs', '%DATE%-app.log'),
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json({ space: 2 }),
-        winston.format.printf((info) => {
-          if (info.level === 'error') return '';
-          return JSON.stringify(info, null, 2);
-        })
-      ),
-      level: 'info',
     }),
   ],
 });

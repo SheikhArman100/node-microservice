@@ -19,8 +19,8 @@ const myFormat = printf(({ level, message, timestamp, ...metadata }) => {
 
 
 
-// App logger - for server starts and general app logs
-export const appLogger = winston.createLogger({
+// Default logger - for server starts and general app logs
+const logger = winston.createLogger({
   level: 'info',
   format: combine(
     timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -28,6 +28,7 @@ export const appLogger = winston.createLogger({
     myFormat
   ),
   transports: [
+    // App logs
     new DailyRotateFile({
       filename: path.join(logDir, 'app-%DATE%.log'),
       datePattern: 'YYYY-MM-DD',
@@ -39,8 +40,35 @@ export const appLogger = winston.createLogger({
         winston.format.json({ space: 2 })
       ),
     }),
+    // Error logs
+    new DailyRotateFile({
+      filename: path.join(logDir, 'error-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d',
+      level: 'error',
+      format: combine(
+        timestamp(),
+        winston.format.json({ space: 2 })
+      ),
+    }),
   ],
 });
+
+if(process.env.NODE_ENV !== 'production') {
+  logger.add(
+    new winston.transports.Console({
+      format: combine(
+        winston.format.colorize(),
+        winston.format.simple(),
+        myFormat
+      ),
+    })
+  );
+}
+
+export default logger;
 
 // Gateway logger - for routing information
 export const gatewayLogger = winston.createLogger({
@@ -64,28 +92,4 @@ export const gatewayLogger = winston.createLogger({
     }),
   ],
 });
-
-// Add console transports in development
-// if (process.env.NODE_ENV !== 'production') {
-//   appLogger.add(
-//     new winston.transports.Console({
-//       format: combine(
-//         winston.format.colorize(),
-//         winston.format.simple(),
-//         myFormat
-//       ),
-//     })
-//   );
-
-//   gatewayLogger.add(
-//     new winston.transports.Console({
-//       format: combine(
-//         winston.format.colorize(),
-//         winston.format.simple(),
-//         myFormat
-//       ),
-//     })
-//   );
-// }
-
 

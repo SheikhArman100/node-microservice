@@ -9,7 +9,7 @@ import { sendEmail } from '../../helpers/nodeMailer';
 import { parseExpirationTime } from '../../utils';
 import { IUser } from '../user/user.interface';
 import { IFile } from '../../interfaces/common';
-import logger from '../../shared/logger';
+import logger from '../../logger/logger';
 import { UserInfoFromToken } from '../../types/common';
 import { ENUM_ROLE, ROLE_PERMISSIONS } from '../../enum/rbac';
 import config from '../../config';

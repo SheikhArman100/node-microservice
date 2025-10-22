@@ -5,7 +5,7 @@ import { IGenericErrorMessages } from '../../interfaces/error';
 import ApiError from '../../errors/ApiError';
 import { ZodError } from 'zod';
 import handleZodError from '../../errors/handleZodError';
-import { appLogger } from './logger';
+import { appLogger } from '../../logger/logger';
 // import handleCastError from '../../errors/handleCastError';
 
 

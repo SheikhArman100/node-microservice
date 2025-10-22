@@ -1,5 +1,6 @@
 import * as amqp from 'amqplib';
 import config from '../../config';
+import logger from '../../logger/logger';
 
 
 class RabbitMQConnection {
@@ -25,23 +26,23 @@ class RabbitMQConnection {
     this.isConnecting = true;
 
     try {
-      console.log('Connecting to RabbitMQ...', { url: config.rabbitmq_url });
+      logger.info('Connecting to RabbitMQ...', { url: config.rabbitmq_url });
 
       this.connection = await amqp.connect(config.rabbitmq_url as string);
       this.channel = await this.connection.createChannel();
 
       // Handle connection events
       this.connection.on('error', (err: any) => {
-        console.error('RabbitMQ connection error', { error: err });
+        logger.error('RabbitMQ connection error', { error: err });
         this.resetConnection();
       });
 
       this.connection.on('close', () => {
-        console.warn('RabbitMQ connection closed');
+        logger.warn('RabbitMQ connection closed');
         this.resetConnection();
       });
 
-      console.log('Successfully connected to RabbitMQ');
+      logger.info('Successfully connected to RabbitMQ');
       return this.channel;
     } catch (error) {
       console.error('Failed to connect to RabbitMQ', { error });
@@ -68,9 +69,9 @@ class RabbitMQConnection {
       }
       console.log('RabbitMQ connection closed gracefully');
     } catch (error) {
-      console.error('Error closing RabbitMQ connection', { error });
-    } finally {
+      logger.error('Failed to connect to RabbitMQ', { error });
       this.resetConnection();
+      throw error;
     }
   }
 

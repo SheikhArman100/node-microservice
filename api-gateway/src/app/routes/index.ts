@@ -2,7 +2,7 @@
 import express, { RequestHandler } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import config from '../../config';
-import { gatewayLogger } from '../middleware/logger';
+import { gatewayLogger } from '../../logger/logger';
 
 const router = express.Router();
 

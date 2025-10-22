@@ -1,4 +1,5 @@
 import rabbitMQ from './rabbitmq';
+import logger from '../../logger/logger';
 
 export const setupQueues = async () => {
   try {
@@ -32,9 +33,9 @@ export const setupQueues = async () => {
     await channel.bindQueue('order-events-queue', 'order-events', 'order.status.changed');
     await channel.bindQueue('order-events-queue', 'order-events', 'payment.processed');
 
-    console.log('✅ RabbitMQ queues, exchanges, and bindings setup completed successfully');
+    logger.info('RabbitMQ queues, exchanges, and bindings setup completed successfully');
   } catch (error) {
-    console.error('❌ Failed to setup RabbitMQ infrastructure:', error);
+    logger.error('Failed to setup RabbitMQ infrastructure', { error });
     throw error;
   }
 };

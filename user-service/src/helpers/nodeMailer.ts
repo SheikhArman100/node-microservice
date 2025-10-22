@@ -1,6 +1,7 @@
 import config from '../config';
 import nodemailer from 'nodemailer';
-import logger from '../shared/logger';
+import logger from '../logger/logger';
+
 
 /**
  * Sends an email using the Gmail SMTP server.
