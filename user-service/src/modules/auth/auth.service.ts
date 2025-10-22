@@ -13,6 +13,7 @@ import logger from '../../shared/logger';
 import { UserInfoFromToken } from '../../types/common';
 import { ENUM_ROLE, ROLE_PERMISSIONS } from '../../enum/rbac';
 import config from '../../config';
+import { publishUserEvent } from '../../shared/rabbitmq/userEvents';
 
 //signup
 const signup = async (payload: IUser, multerFile?: IFile) => {
@@ -119,6 +120,21 @@ const signup = async (payload: IUser, multerFile?: IFile) => {
     `,
     'Verify Your Email',
   );
+
+  // Publish user created event
+  try {
+    await publishUserEvent('user.created', {
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      phoneNumber: newUser.phoneNumber || undefined,
+      isVerified: newUser.isVerified,
+    });
+  } catch (error) {
+    logger.error('Failed to publish user created event', { error, userId: newUser.id });
+    // Don't fail signup if event publishing fails
+  }
+
   return {
     id: newUser.id,
   };

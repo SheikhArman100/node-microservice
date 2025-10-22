@@ -7,6 +7,7 @@ import { userSearchableFields } from './user.constant';
 import { UserInfoFromToken } from '../../types/common';
 import ApiError from '../../errors/ApiError';
 import status from 'http-status';
+import { publishUserEvent } from '../../shared/rabbitmq/userEvents';
 
 // Note: User creation is handled by auth service signup, not here
 
@@ -214,6 +215,21 @@ const updateUser = async (id: number, payload: Partial<IUser>, authInfo: UserInf
             updatedAt: true
         }
     });
+
+    // Publish user updated event
+    try {
+      await publishUserEvent('user.updated', {
+        id: result.id,
+        name: result.name,
+        email: result.email,
+        phoneNumber: result.phoneNumber || undefined,
+        isVerified: result.isVerified,
+      });
+    } catch (error) {
+      // Log error but don't fail the update
+      console.error('Failed to publish user updated event', { error, userId: result.id });
+    }
+
     return result;
 };
 

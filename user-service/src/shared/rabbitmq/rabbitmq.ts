@@ -1,6 +1,7 @@
 import * as amqp from 'amqplib';
-import config from '../config/index';
-import logger from './logger';
+import logger from '../logger';
+import config from '../../config';
+
 
 class RabbitMQConnection {
   private connection: any = null;

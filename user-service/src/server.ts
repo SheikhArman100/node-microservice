@@ -4,8 +4,8 @@ import app from './app';
 import { prisma } from './client';
 import config from './config/index';
 import logger from './shared/logger';
-import rabbitMQ from './shared/rabbitmq';
-import setupQueues from './shared/queueSetup';
+import rabbitMQ from './shared/rabbitmq/rabbitmq';
+import setupQueues from './shared/rabbitmq/queueSetup';
 
 let server: Server;
 

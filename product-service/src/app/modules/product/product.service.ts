@@ -1,4 +1,5 @@
 import { Product } from './product.model';
+import { UserCache } from '../user/userCache.model';
 import { IProduct, IProductFilters } from './product.interface';
 import { productSearchableFields } from './product.constant';
 import { IGenericResponse, IPaginationOptions, UserInfoFromToken } from '../../../interfaces/common';
@@ -70,9 +71,25 @@ const getAllProducts = async (
     };
 };
 
-const getProductByID = async (id: string): Promise<IProduct | null> => {
-    const result = await Product.findById(id);
-    return result;
+const getProductByID = async (id: string): Promise<any> => {
+    const product = await Product.findById(id);
+    if (!product) {
+        return null;
+    }
+
+    // Populate user data from cache
+    const userCache = await UserCache.findById(product.createdBy);
+    const user = userCache ? {
+        id: userCache._id,
+        name: userCache.name,
+        email: userCache.email,
+    } : null;
+
+    // Return product with populated user data
+    return {
+        ...product.toObject(),
+        createdByUser: user,
+    };
 };
 
 const updateProduct = async (
