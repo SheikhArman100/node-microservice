@@ -4,6 +4,7 @@ export interface IUser {
   _id: string; 
   name: string;
   email: string;
+  role: string;
   lastUpdated: Date;
 }
 
@@ -19,6 +20,11 @@ const UserSchema = new Schema<IUser>({
   email: {
     type: String,
     required: true,
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'user'],
+    default: 'user',
   },
   lastUpdated: {
     type: Date,
