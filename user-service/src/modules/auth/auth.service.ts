@@ -13,7 +13,7 @@ import logger, { eventLogger } from '../../logger/logger';
 import { UserInfoFromToken } from '../../types/common';
 import { ENUM_ROLE, ROLE_PERMISSIONS } from '../../enum/rbac';
 import config from '../../config';
-import { publishUserEvent } from '../../shared/rabbitmq/userPublishEvents';
+import { publishUserEvent } from '../../shared/rabbitmq/eventPublisher';
 
 //signup
 const signup = async (payload: IUser, multerFile?: IFile) => {

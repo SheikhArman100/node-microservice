@@ -5,7 +5,7 @@ import config from './config';
 import logger from './logger/logger';
 import rabbitMQ from './shared/rabbitmq/rabbitmq';
 import setupQueues from './shared/rabbitmq/queueSetup';
-import { startUserEventConsumer } from './shared/rabbitmq/userEventConsumer';
+import { startEventConsumer } from './shared/rabbitmq/eventConsumer';
 
 let server: Server;
 
@@ -23,8 +23,8 @@ async function main() {
     // Setup RabbitMQ queues, exchanges, and bindings
     await setupQueues();
 
-    // Start user event consumer
-    await startUserEventConsumer();
+    // Start event consumer
+    await startEventConsumer();
 
     server = app.listen(config.port, () => {
       console.log(`Product service listening on port ${config.port}`);

@@ -6,6 +6,7 @@ import config from './config/index';
 import logger from './logger/logger';
 import rabbitMQ from './shared/rabbitmq/rabbitmq';
 import setupQueues from './shared/rabbitmq/queueSetup';
+import { startEventConsumer } from './shared/rabbitmq/eventConsumer';
 
 let server: Server;
 
@@ -26,6 +27,9 @@ async function main() {
 
     // Setup RabbitMQ queues, exchanges, and bindings
     await setupQueues();
+
+    // Start event consumer
+    await startEventConsumer();
 
     server = app.listen(config.port, () => {
       console.log(`User Server started successfully on port ${config.port}`);

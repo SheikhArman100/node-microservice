@@ -93,4 +93,37 @@ export const eventLogger = winston.createLogger({
   ],
 });
 
+// DLQ logger for dead letter queue messages
+export const dlqLogger = winston.createLogger({
+  level: 'error',  // Only log errors and dead letter messages
+  format: combine(
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    myFormat
+  ),
+  transports: [
+    new DailyRotateFile({
+      filename: path.join(logDir, 'dlq-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '30d',  // Keep DLQ logs longer for analysis
+      format: combine(
+        timestamp(),
+        winston.format.json({ space: 2 })
+      ),
+    }),
+  ],
+});
 
+if(process.env.NODE_ENV !== 'production') {
+  dlqLogger.add(
+    new winston.transports.Console({
+      format: combine(
+        winston.format.colorize(),
+        winston.format.simple(),
+        myFormat
+      ),
+    })
+  );
+}
