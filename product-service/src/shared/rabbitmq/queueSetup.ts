@@ -7,6 +7,7 @@ export const setupQueues = async () => {
 
     // Declare exchanges
     await channel.assertExchange('user-events', 'direct', { durable: true });
+    await channel.assertExchange('product-events', 'direct', { durable: true });
 
     // Declare queues
     await channel.assertQueue('user-events-queue', { durable: true });
