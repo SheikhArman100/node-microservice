@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../client';
 import { calculatePagination } from '../../helpers/paginationHelper';
-import { IPaginationOptions } from '../../interfaces/common';
+import { IFile, IPaginationOptions } from '../../interfaces/common';
 import { IUser, IUserFilters } from './user.interface';
 import { userSearchableFields } from './user.constant';
 import { UserInfoFromToken } from '../../types/common';
@@ -168,69 +168,226 @@ const getUserByID = async (id: number, authInfo: UserInfoFromToken) => {
  * - Admin can update any user
  * - Managers can update users with lower role levels
  */
-const updateUser = async (id: number, payload: Partial<IUser>, authInfo: UserInfoFromToken) => {
-    // First check if user exists and get their role level
-    const userToUpdate = await prisma.user.findUnique({
-        where: { id },
+const updateUser = async (
+  id: number,
+  payload: any,
+  authInfo: UserInfoFromToken,
+  multerFile?: IFile
+) => {
+  // First check if user exists and get their role level
+  const userToUpdate = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      roleId: true,
+      userRole: {
         select: {
-            id: true,
-            userRole: {
-                select: {
-                    level: true
-                }
-            }
-        }
+          level: true,
+          name: true,
+        },
+      },
+      detail: {
+        select: {
+          id: true,
+          image: {
+            select: {
+              id: true,
+              path: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!userToUpdate) {
+    throw new ApiError(status.NOT_FOUND, 'User not found');
+  }
+
+  // Apply access control using role levels
+  const currentUserRoleLevel = authInfo.roleLevel;
+  if (currentUserRoleLevel >= 100) {
+    // Admin can update any user
+  } else if (currentUserRoleLevel <= 10) {
+    // User can only update themselves
+    if (authInfo.id.toString() !== id.toString()) {
+      throw new ApiError(status.FORBIDDEN, 'You can only update your own profile');
+    }
+    // Users cannot change their own role
+    if (payload.role) {
+      throw new ApiError(status.FORBIDDEN, 'You cannot change your own role');
+    }
+  } else {
+    
+    if (!userToUpdate.userRole || userToUpdate.userRole.level >= currentUserRoleLevel) {
+      throw new ApiError(status.FORBIDDEN, 'Cannot update users at same or higher level');
+    }
+  }
+
+  // Get new role details if role is being updated
+  let newRoleId = userToUpdate.roleId;
+  if (payload.role) {
+    const roleDetails = await prisma.role.findFirst({
+      where: { name: payload.role },
+    });
+    if (!roleDetails) {
+      throw new ApiError(status.BAD_REQUEST, 'Invalid role provided');
+    }
+    newRoleId = roleDetails.id;
+  }
+
+  // Check for duplicate email/phone if being updated
+  if (payload.email || payload.phoneNumber) {
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        AND: [
+          { id: { not: id } }, 
+          {
+            OR: [
+              ...(payload.email ? [{ email: payload.email }] : []),
+              ...(payload.phoneNumber ? [{ phoneNumber: payload.phoneNumber }] : []),
+            ],
+          },
+        ],
+      },
     });
 
-    if (!userToUpdate) {
-        throw new ApiError(status.NOT_FOUND, "User not found");
+    if (existingUser) {
+      throw new ApiError(
+        status.UNPROCESSABLE_ENTITY,
+        'Email or PhoneNumber already exists'
+      );
     }
+  }
 
-    // Apply access control using role levels
-    const currentUserRoleLevel = authInfo.roleLevel;
-    if (currentUserRoleLevel >= 100) {
-        // Admin can update any user
-    }
-    else if (currentUserRoleLevel <= 10) {
-        // User cannot update anyone
-        throw new ApiError(status.FORBIDDEN, 'You cannot update users.');
-    }
-    else {
-        // Managers can only update users with lower role levels
-        if (!userToUpdate.userRole || userToUpdate.userRole.level >= currentUserRoleLevel) {
-            throw new ApiError(status.FORBIDDEN, 'Cannot update users at same or higher level');
-        }
-    }
-
-    const result = await prisma.user.update({
-        where: { id },
-        data: payload,
-        select: {
-            id: true,
+  // Use transaction to update user and related data
+  const result = await prisma.$transaction(async (tx) => {
+    // Update user
+    const updatedUser = await tx.user.update({
+      where: { id },
+      data: {
+        ...(payload.name && { name: payload.name }),
+        ...(payload.email && { email: payload.email }),
+        ...(payload.phoneNumber && { phoneNumber: payload.phoneNumber }),
+        ...(payload.isVerified !== undefined && { isVerified: payload.isVerified }),
+        ...(payload.role && { roleId: newRoleId }),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+        isVerified: true,
+        roleId: true,
+        createdAt: true,
+        updatedAt: true,
+        userRole: {
+          select: {
             name: true,
-            email: true,
-            phoneNumber: true,
-            isVerified: true,
-            createdAt: true,
-            updatedAt: true
-        }
+          },
+        },
+      },
     });
 
-    // Publish user updated event
-    try {
-      await publishUserEvent('user.updated', {
-        id: result.id,
-        name: result.name,
-        email: result.email,
-        phoneNumber: result.phoneNumber || undefined,
-        isVerified: result.isVerified,
+    // Handle UserDetail updates (address, city, road, image)
+    if (payload.address || payload.city || payload.road || multerFile) {
+      // Check if UserDetail exists
+      const existingDetail = await tx.userDetail.findUnique({
+        where: { userId: id },
+        select: {
+          id: true,
+          image: {
+            select: {
+              id: true,
+              path: true,
+            },
+          },
+        },
       });
-    } catch (error) {
-      // Log error but don't fail the update
-      console.error('Failed to publish user updated event', { error, userId: result.id });
+
+      if (existingDetail) {
+        // Update existing UserDetail
+        const updateData: any = {
+          ...(payload.address && { address: payload.address }),
+          ...(payload.city && { city: payload.city }),
+          ...(payload.road && { road: payload.road }),
+        };
+
+        // Handle image update
+        if (multerFile) {
+          if (existingDetail.image) {
+            // Update existing image
+            updateData.image = {
+              update: {
+                diskType: 'LOCAL',
+                modifiedName: multerFile.filename,
+                originalName: multerFile.originalname,
+                path: `users/${multerFile.filename}`,
+                type: 'IMAGE',
+              },
+            };
+          } else {
+            // Create new image
+            updateData.image = {
+              create: {
+                diskType: 'LOCAL',
+                modifiedName: multerFile.filename,
+                originalName: multerFile.originalname,
+                path: `users/${multerFile.filename}`,
+                type: 'IMAGE',
+              },
+            };
+          }
+        }
+
+        await tx.userDetail.update({
+          where: { userId: id },
+          data: updateData,
+        });
+      } else {
+        // Create new UserDetail
+        const createData: any = {
+          userId: id,
+          ...(payload.address && { address: payload.address }),
+          ...(payload.city && { city: payload.city }),
+          ...(payload.road && { road: payload.road }),
+        };
+
+        if (multerFile) {
+          createData.image = {
+            create: {
+              diskType: 'LOCAL',
+              modifiedName: multerFile.filename,
+              originalName: multerFile.originalname,
+              path: `users/${multerFile.filename}`,
+              type: 'IMAGE',
+            },
+          };
+        }
+
+        await tx.userDetail.create({
+          data: createData,
+        });
+      }
     }
 
-    return result;
+    return updatedUser;
+  });
+
+  // Publish user updated event
+  try {
+    await publishUserEvent('user.updated', {
+      id: result.id,
+      name: result.name,
+      email: result.email,
+      role: result.userRole?.name ?? 'user',
+      phoneNumber: result.phoneNumber,
+    });
+  } catch (error) {
+    console.error('Failed to publish user updated event', { error, userId: result.id });
+  }
+
+  return result;
 };
 
 /**

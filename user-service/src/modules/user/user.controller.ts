@@ -8,6 +8,7 @@ import pick from '../../helpers/pick';
 import { userFilterableFields } from './user.constant';
 import { paginationFields } from '../../constant';
 import { UserInfoFromToken } from '../../types/common';
+import { IFile } from '../../interfaces/common';
 
 // Note: User creation is handled by auth signup route, not here
 
@@ -47,7 +48,7 @@ const getUserByID = catchAsync(async (req: Request, res: Response) => {
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const result = await UserService.updateUser(Number(id), req.body as Partial<IUser>, req.user as UserInfoFromToken);
+    const result = await UserService.updateUser(Number(id), req.body as Partial<IUser>, req.user as UserInfoFromToken,req.file as IFile);
 
     sendResponse(res, {
         statusCode: status.OK,
