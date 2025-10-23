@@ -7,13 +7,12 @@ export const startUserEventConsumer = async () => {
   try {
     const channel = await rabbitMQ.connect();
 
-    // Assert queue exists (should already be created by queueSetup)
-    await channel.assertQueue('user-events-queue', { durable: true });
+    
 
-    logger.info('✅ User event consumer started, listening to user-events-queue');
+    logger.info('✅ User event consumer started, listening to order-events-queue');
 
     // Consume messages from the queue
-    channel.consume('user-events-queue', async (msg: any) => {
+    channel.consume('order-events-queue', async (msg: any) => {
       if (msg) {
         try {
           const message = JSON.parse(msg.content.toString());

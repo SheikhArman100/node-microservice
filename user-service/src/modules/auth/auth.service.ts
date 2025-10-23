@@ -111,17 +111,13 @@ const signup = async (payload: IUser, multerFile?: IFile) => {
   );
 
   // // Publish user created event
-  try {
-    await publishUserEvent('user.created', {
+ await publishUserEvent('user.created', {
       id: newUser.id,
       name: newUser.name,
       email: newUser.email,
       role: roleDetails.name,
       phoneNumber: newUser.phoneNumber ,
     });
-  } catch (error) {
-    eventLogger.info('Failed to publish user created event', { error, userId: newUser.id });
-  }
 
   return {
     id: newUser.id,

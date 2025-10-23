@@ -7,31 +7,21 @@ export const setupQueues = async () => {
 
     // Declare exchanges
     await channel.assertExchange('user-events', 'direct', { durable: true });
-    await channel.assertExchange('product-events', 'direct', { durable: true });
-    await channel.assertExchange('order-events', 'direct', { durable: true });
 
     // Declare queues
     await channel.assertQueue('user-events-queue', { durable: true });
     await channel.assertQueue('product-events-queue', { durable: true });
     await channel.assertQueue('order-events-queue', { durable: true });
 
-    // Bind queues to exchanges with routing keys
+    // User events for product service
+    await channel.bindQueue('product-events-queue', 'user-events', 'user.created');
+    await channel.bindQueue('product-events-queue', 'user-events', 'user.updated');
+    await channel.bindQueue('product-events-queue', 'user-events', 'user.deleted');
 
-    // User events queue bindings
-    await channel.bindQueue('user-events-queue', 'user-events', 'user.created');
-    await channel.bindQueue('user-events-queue', 'user-events', 'user.updated');
-    await channel.bindQueue('user-events-queue', 'user-events', 'user.deleted');
-
-    // Product events queue bindings
-    await channel.bindQueue('product-events-queue', 'product-events', 'product.created');
-    await channel.bindQueue('product-events-queue', 'product-events', 'product.updated');
-    await channel.bindQueue('product-events-queue', 'product-events', 'product.deleted');
-    await channel.bindQueue('product-events-queue', 'product-events', 'inventory.changed');
-
-    // Order events queue bindings
-    await channel.bindQueue('order-events-queue', 'order-events', 'order.created');
-    await channel.bindQueue('order-events-queue', 'order-events', 'order.status.changed');
-    await channel.bindQueue('order-events-queue', 'order-events', 'payment.processed');
+    // User events for order service
+    await channel.bindQueue('order-events-queue', 'user-events', 'user.created');
+    await channel.bindQueue('order-events-queue', 'user-events', 'user.updated');
+    await channel.bindQueue('order-events-queue', 'user-events', 'user.deleted');
 
     logger.info('RabbitMQ queues, exchanges, and bindings setup completed successfully');
   } catch (error) {
