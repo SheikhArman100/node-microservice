@@ -375,36 +375,52 @@ const updateUser = async (
   });
 
   // Publish user updated event
-  try {
-    await publishUserEvent('user.updated', {
+await publishUserEvent('user.updated', {
       id: result.id,
       name: result.name,
       email: result.email,
       role: result.userRole?.name ?? 'user',
       phoneNumber: result.phoneNumber,
     });
-  } catch (error) {
-    console.error('Failed to publish user updated event', { error, userId: result.id });
-  }
 
   return result;
 };
 
 /**
- * Delete user by ID
+ * Delete user by ID and all related data
  * - Requires DELETE_USER permission
  * - Admin can delete any user
  * - Managers can delete users with lower role levels
+ * - Cascading delete removes: UserDetail, RefreshToken, Files
  */
 const deleteUserByID = async (id: number, authInfo: UserInfoFromToken) => {
-    // First check if user exists and get their role level
+    // Get user data BEFORE deletion (for event publishing)
     const userToDelete = await prisma.user.findUnique({
         where: { id },
         select: {
             id: true,
+            name: true,
+            email: true,
             userRole: {
                 select: {
+                    name: true,
                     level: true
+                }
+            },
+            detail: {
+                select: {
+                    id: true,
+                    image: {
+                        select: {
+                            id: true,
+                            path: true
+                        }
+                    }
+                }
+            },
+            refreshToken: {
+                select: {
+                    id: true
                 }
             }
         }
@@ -418,22 +434,46 @@ const deleteUserByID = async (id: number, authInfo: UserInfoFromToken) => {
     const currentUserRoleLevel = authInfo.roleLevel;
     if (currentUserRoleLevel >= 100) {
         // Admin can delete any user
-    }
-    else if (currentUserRoleLevel <= 10) {
+    } else if (currentUserRoleLevel <= 10) {
         // User cannot delete anyone
         throw new ApiError(status.FORBIDDEN, 'You cannot delete users.');
-    }
-    else {
+    } else {
         // Managers can only delete users with lower role levels
-        if (!userToDelete.userRole || userToDelete.userRole.level >= currentUserRoleLevel) {
+        if (userToDelete.userRole && userToDelete.userRole.level >= currentUserRoleLevel) {
             throw new ApiError(status.FORBIDDEN, 'Cannot delete users at same or higher level');
         }
     }
 
-    const result = await prisma.user.delete({
-        where: { id }
+    // Use transaction for comprehensive deletion
+    const result = await prisma.$transaction(async (tx) => {
+        // Delete user and all related data (cascading deletes handle relationships)
+        const deletedUser = await tx.user.delete({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                email: true
+            }
+        });
+
+        // Explicit cleanup for safety (though cascading should handle this)
+        await tx.userDetail.deleteMany({ where: { userId: id } });
+        await tx.refreshToken.deleteMany({ where: { userId: id } });
+
+        return deletedUser;
     });
-    return result;
+
+    // Publish user deleted event
+   await publishUserEvent('user.deleted', {
+            id: result.id,
+            name: result.name,
+            email: result.email,
+            role: userToDelete.userRole?.name || 'user'
+        });
+
+    return {
+        id: result.id,
+    };
 };
 
 export const UserService = {
