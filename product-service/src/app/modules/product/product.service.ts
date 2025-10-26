@@ -118,6 +118,7 @@ const getProductByID = async (id: string): Promise<any> => {
 const updateProduct = async (
   id: string,
   payload: Partial<IProduct>,
+  userInfo: UserInfoFromToken,
 ): Promise<IProduct | null> => {
   // Get the original product to check what changed
   const originalProduct = await Product.findById(id);
@@ -125,22 +126,29 @@ const updateProduct = async (
     throw new ApiError(status.NOT_FOUND, 'Product not found');
   }
 
-  const result = await Product.findOneAndUpdate({ _id: id }, payload, {
+  const result = await Product.findOneAndUpdate({ _id: id }, {
+    ...(payload.name !== undefined && { name: payload.name }),
+    ...(payload.imagelink !== undefined && { imagelink: payload.imagelink }),
+    ...(payload.stock !== undefined && { stock: payload.stock }),
+    ...(payload.category !== undefined && { category: payload.category }),
+    updatedBy: userInfo.id,
+  }, {
     new: true,
   });
+  if (!result) {
+    throw new ApiError(status.BAD_REQUEST, 'Failed to update product');
+  }
 
-  if (result) {
-    // Check if only stock was updated
+ // Check if only stock was updated
     const stockOnlyChanged =
       payload.stock !== undefined &&
       payload.stock !== originalProduct.stock &&
-      Object.keys(payload).length === 2 && // stock + updatedBy
+      Object.keys(payload).length === 2 && 
       payload.updatedBy !== undefined;
 
     if (stockOnlyChanged) {
       // Publish inventory changed event
-      try {
-        await publishProductEvent('inventory.changed', {
+     await publishProductEvent('inventory.changed', {
           id: result._id.toString(),
           name: result.name,
           imagelink: result.imagelink,
@@ -149,16 +157,9 @@ const updateProduct = async (
           createdBy: result.createdBy.toString(),
           updatedBy: result.updatedBy.toString(),
         });
-      } catch (error) {
-        console.error('Failed to publish inventory changed event', {
-          error,
-          productId: result._id,
-        });
-      }
     } else {
       // Publish general product updated event
-      try {
-        await publishProductEvent('product.updated', {
+     await publishProductEvent('product.updated', {
           id: result._id.toString(),
           name: result.name,
           imagelink: result.imagelink,
@@ -167,15 +168,9 @@ const updateProduct = async (
           createdBy: result.createdBy.toString(),
           updatedBy: result.updatedBy.toString(),
         });
-      } catch (error) {
-        console.error('Failed to publish product updated event', {
-          error,
-          productId: result._id,
-        });
-      }
     }
-  }
 
+ 
   return result;
 };
 

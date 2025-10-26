@@ -3,8 +3,6 @@ import validateRequest from '../../middleware/validateRequest';
 import { ProductController } from './product.controller';
 import { ProductValidation } from './product.validation';
 import authorize from '../../middleware/authorize';
-// import auth from '../../../middlewares/auth';
-// import { ENUM_USER_ROLE } from '../../../enums/user';
 
 const router = express.Router();
 
@@ -18,26 +16,25 @@ router.post(
 router.get(
     '/',
     authorize("read_product"),
-    // auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.USER), 
     ProductController.getAllProducts
 );
 
 router.get(
     '/:id',
-    // auth(ENUM_USER_ROLE.ADMIN, ENUM_USER_ROLE.USER), 
+    authorize("read_product"),
     ProductController.getProductByID
 );
 
 router.patch(
     '/:id',
-    // auth(ENUM_USER_ROLE.ADMIN), 
-    // validateRequest(ProductValidation.updateProductZodSchema), 
+    authorize("update_product"),
+    validateRequest(ProductValidation.updateProductZodSchema), 
     ProductController.updateProduct
 );
 
 router.delete(
     '/:id',
-    // auth(ENUM_USER_ROLE.ADMIN), 
+    authorize("delete_product"),
     ProductController.deleteProductByID
 );
 

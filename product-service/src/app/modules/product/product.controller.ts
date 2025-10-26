@@ -50,8 +50,7 @@ const getProductByID = catchAsync(async (req: Request, res: Response) => {
 
 const updateProduct = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const updateData = { ...req.body, updatedBy: req.user?.id };
-    const result = await ProductService.updateProduct(id, updateData);
+    const result = await ProductService.updateProduct(id, req.body, req.user as UserInfoFromToken);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,

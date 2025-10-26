@@ -31,6 +31,13 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
+app.get('/api/v1', (req: Request, res: Response) => {
+  res.status(200).json({
+    success: true,
+    message: 'Welcome to Order Service API Server',
+  });
+});
+
 /**
  * Static file serving for local storage
  */
