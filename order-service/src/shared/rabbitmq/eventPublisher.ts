@@ -3,6 +3,7 @@ import logger, { eventLogger } from '../../logger/logger';
 
 export interface OrderEventData {
   id: string;
+  orderNumber: string;
   userId: string;
   totalAmount: number;
   status: string;

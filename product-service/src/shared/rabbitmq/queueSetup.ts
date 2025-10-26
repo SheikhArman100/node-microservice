@@ -19,6 +19,9 @@ export const setupQueues = async () => {
     await channel.bindQueue('product-events-queue', 'user-events', 'user.updated');
     await channel.bindQueue('product-events-queue', 'user-events', 'user.deleted');
 
+    // Order events for product service (stock updates)
+    await channel.bindQueue('product-events-queue', 'order-events', 'order.created');
+
     logger.info('RabbitMQ queues, exchanges, and bindings setup completed successfully');
   } catch (error) {
     logger.error('Failed to setup RabbitMQ infrastructure', { error });

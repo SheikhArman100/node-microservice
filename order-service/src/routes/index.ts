@@ -1,5 +1,5 @@
 import express from 'express';
-
+import { OrderRoutes } from '../modules/order/order.route';
 
 const router = express.Router();
 
@@ -8,18 +8,13 @@ interface Route {
   route: express.Router;
 }
 
-// const moduleRoutes: Route[] = [
-//   {
-//     path: '/auth',
-//     route: authRoute,
-//   },
-//   {
-//     path: '/user',
-//     route: userRoute,
-//   },
- 
-// ];
+const moduleRoutes: Route[] = [
+  {
+    path: '/orders',
+    route: OrderRoutes,
+  },
+];
 
-// moduleRoutes.forEach(route => router.use(route.path, route.route));
+moduleRoutes.forEach(route => router.use(route.path, route.route));
 
 export const ApplicationRouters = router;
